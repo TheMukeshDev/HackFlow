@@ -22,7 +22,8 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 def _get_google_redirect_uri():
     """Get the Google redirect URI based on environment."""
     base_url = os.environ.get(
-        "GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback"
+        "GOOGLE_REDIRECT_URI",
+        "https://hackflow-1048267671039.asia-south2.run.app/auth/google/callback",
     )
     return base_url
 
