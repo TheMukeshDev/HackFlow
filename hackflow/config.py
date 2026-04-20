@@ -42,6 +42,8 @@ class ProductionConfig(Config):
     """Production configuration."""
 
     DEBUG = False
+    WTF_CSRF_ENABLED = True
+    SESSION_COOKIE_SECURE = True
 
 
 class TestingConfig(Config):
