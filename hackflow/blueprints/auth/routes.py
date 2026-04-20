@@ -558,7 +558,6 @@ def logout():
     user_name = session.get("full_name", "User")
     user_email = session.get("email")
     clear_current_user()
-    session.clear()
     logger.info(f"User logged out: {user_email} (user_id: {user_id})")
     flash(f"Goodbye, {user_name}!", "info")
     return redirect(url_for("index"))

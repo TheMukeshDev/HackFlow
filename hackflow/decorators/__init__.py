@@ -1,7 +1,7 @@
 """Custom decorators for authentication and authorization."""
 
 from functools import wraps
-from flask import session, redirect, url_for, flash, abort, g
+from flask import session, redirect, url_for, flash, abort
 from hackflow.services.auth_service import Role, Permission
 
 
@@ -123,8 +123,6 @@ def set_current_user(user_data: dict):
 
 def clear_current_user():
     """Clear current user from session."""
-    session.pop("user_id", None)
-    session.pop("email", None)
-    session.pop("username", None)
-    session.pop("role", None)
-    session.pop("full_name", None)
+    session_keys = ["user_id", "email", "username", "role", "full_name", "is_active"]
+    for key in session_keys:
+        session.pop(key, None)

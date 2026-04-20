@@ -25,6 +25,24 @@
             --warning: #d29922;
             --danger: #f85149;
             --text-primary: #f0f6fc;
+        }
+        
+        /* Skip link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--primary);
+            color: var(--bg-deep);
+            padding: 8px 16px;
+            z-index: 9999;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
             --text-secondary: #8b949e;
             --text-muted: #6e7681;
         }
@@ -33,6 +51,14 @@
             background: var(--bg-deep);
             color: var(--text-primary);
             min-height: 100vh;
+        }
+        /* Keyboard focus styles for accessibility */
+        a:focus, button:focus, input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        .btn:focus {
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
         }
         .card-dark, .dashboard-section, .admin-section, .volunteer-section, .volunteer-card {
             background: var(--bg-surface);
@@ -46,6 +72,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     {% if current_user %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">

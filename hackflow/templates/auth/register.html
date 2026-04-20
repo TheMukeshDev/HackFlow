@@ -251,29 +251,32 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="form-group">
-                    <label class="form-label" for="full_name">Full name</label>
+                    <label class="form-label" for="full_name">Full name <span aria-hidden="true">*</span></label>
                     <input type="text" class="form-control" id="full_name" name="full_name" 
-                           placeholder="John Doe" required>
+                           placeholder="John Doe" required aria-required="true">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="email">Email address</label>
+                    <label class="form-label" for="email">Email address <span aria-hidden="true">*</span></label>
                     <input type="email" class="form-control" id="email" name="email" 
-                           placeholder="you@example.com" required>
-                    <p class="form-hint">Use your college/organization email</p>
+                           placeholder="you@example.com" required aria-required="true"
+                           aria-describedby="email-hint">
+                    <p class="form-hint" id="email-hint">Use your college/organization email</p>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label" for="password">Password</label>
+                        <label class="form-label" for="password">Password <span aria-hidden="true">*</span></label>
                         <input type="password" class="form-control" id="password" name="password" 
-                               placeholder="Min 8 characters" required minlength="8">
+                               placeholder="Min 8 characters" required minlength="8" aria-required="true"
+                               aria-describedby="password-hint">
+                        <p class="form-hint" id="password-hint">Minimum 8 characters</p>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="confirm_password">Confirm password</label>
+                        <label class="form-label" for="confirm_password">Confirm password <span aria-hidden="true">*</span></label>
                         <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                               placeholder="Re-enter password" required minlength="8">
+                               placeholder="Re-enter password" required minlength="8" aria-required="true">
                     </div>
                 </div>
                 

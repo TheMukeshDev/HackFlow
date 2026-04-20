@@ -110,6 +110,7 @@ class ProductionConfig(Config):
     DEBUG = False
     WTF_CSRF_ENABLED = True
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "None"
 
     @classmethod
     def init_app(cls, app):
