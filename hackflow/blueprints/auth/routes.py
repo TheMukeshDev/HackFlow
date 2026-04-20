@@ -25,17 +25,18 @@ logger = logging.getLogger(__name__)
 
 
 def _get_google_redirect_uri():
-    """Get the Google redirect URI from environment."""
+    """Get the Google redirect URI - uses env var or auto-detects for local dev."""
     base_url = os.environ.get("GOOGLE_REDIRECT_URI")
     if base_url:
         return base_url
 
-    flask_env = os.environ.get("FLASK_ENV", "production")
-    if flask_env == "development":
-        port = os.environ.get("PORT", "8080")
-        return f"http://localhost:{port}/auth/google/callback"
+    port = os.environ.get("PORT", "5000")
+    flask_env = os.environ.get("FLASK_ENV", "development")
 
-    raise ValueError("GOOGLE_REDIRECT_URI environment variable is not set")
+    if flask_env in ["development", "testing"]:
+        return f"http://127.0.0.1:{port}/auth/google/callback"
+
+    return None
 
 
 def _generate_oauth_state():
@@ -365,11 +366,16 @@ def google_login():
         flash("Google sign-in is not configured.", "warning")
         return redirect(url_for("auth.login"))
 
+    redirect_uri = _get_google_redirect_uri()
+    if not redirect_uri:
+        current_app.logger.warning("Google OAuth: redirect URI not configured")
+        flash("Google OAuth is not configured for this environment.", "warning")
+        return redirect(url_for("auth.login"))
+
     state = _generate_oauth_state()
     session["oauth_state"] = state
     session["oauth_start_time"] = int(time.time())
 
-    redirect_uri = _get_google_redirect_uri()
     params = {
         "client_id": google_client_id,
         "redirect_uri": redirect_uri,

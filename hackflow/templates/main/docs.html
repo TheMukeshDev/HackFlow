@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="mb-4">Documentation</h1>
+            <p class="lead text-secondary mb-5">Learn how to use HackFlow for your hackathon.</p>
+
+            <div class="card-dark mb-4">
+                <h3>Getting Started</h3>
+                <p>Welcome to HackFlow! This platform helps you manage hackathon queues, monitor crowd flow, and coordinate volunteers in real-time.</p>
+            </div>
+
+            <div class="card-dark mb-4">
+                <h3>For Participants</h3>
+                <ul>
+                    <li>Create an account or sign in with Google</li>
+                    <li>Join a food queue from your dashboard</li>
+                    <li>View your position in line</li>
+                    <li>Get notified when it's your turn</li>
+                </ul>
+            </div>
+
+            <div class="card-dark mb-4">
+                <h3>For Volunteers</h3>
+                <ul>
+                    <li>Apply to become a volunteer</li>
+                    <li>Wait for admin approval</li>
+                    <li>Manage food counters</li>
+                    <li>Handle help requests</li>
+                    <li>Monitor crowd zones</li>
+                </ul>
+            </div>
+
+            <div class="card-dark mb-4">
+                <h3>For Admins</h3>
+                <ul>
+                    <li>Approve volunteer applications</li>
+                    <li>Manage user roles</li>
+                    <li>Control counter status</li>
+                    <li>Send broadcasts</li>
+                    <li>View analytics</li>
+                </ul>
+            </div>
+
+            <div class="card-dark">
+                <h3>API</h3>
+                <p>Health endpoint: <code>/api/health</code></p>
+                <p>Returns JSON with service status.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -68,14 +68,63 @@ def _register_blueprints(app):
     from hackflow.blueprints.volunteer import volunteer_bp
     from hackflow.blueprints.admin import admin_bp
     from hackflow.blueprints.api import api_bp
+    from hackflow.blueprints.main import main_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(user_bp, url_prefix="/user")
     app.register_blueprint(volunteer_bp, url_prefix="/volunteer")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(main_bp)
 
-    from flask import redirect, url_for, session, render_template
+    from flask import (
+        redirect,
+        url_for,
+        session,
+        render_template,
+        jsonify,
+        send_from_directory,
+    )
+    import os
+
+    @app.route("/favicon.ico")
+    def favicon():
+        return send_from_directory(
+            os.path.join(app.root_path, "static"),
+            "favicon.ico",
+            mimetype="image/vnd.microsoft.icon",
+        )
+
+    @app.route("/health")
+    def health():
+        """Health check endpoint for Cloud Run."""
+        from hackflow.database import get_supabase
+
+        try:
+            supabase = get_supabase()
+            supabase.table("users").select("id").limit(1).execute()
+            return jsonify({"status": "healthy", "service": "hackflow"}), 200
+        except Exception as e:
+            app.logger.error(f"Health check failed: {str(e)}")
+            return jsonify({"status": "unhealthy"}), 503
+
+    @app.route("/health/liveness")
+    def liveness():
+        """Liveness probe for Kubernetes/Cloud Run."""
+        return jsonify({"status": "alive"}), 200
+
+    @app.route("/health/readiness")
+    def readiness():
+        """Readiness probe - checks if app can serve traffic."""
+        from hackflow.database import get_supabase
+
+        try:
+            supabase = get_supabase()
+            supabase.table("users").select("id").limit(1).execute()
+            return jsonify({"status": "ready"}), 200
+        except Exception as e:
+            app.logger.error(f"Readiness check failed: {str(e)}")
+            return jsonify({"status": "not ready"}), 503
 
     @app.route("/")
     def index():

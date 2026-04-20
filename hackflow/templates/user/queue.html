@@ -15,7 +15,7 @@
     </div>
 
     <!-- Current Queue Status -->
-    {% if user_queue %}
+    {% if user_queue and user_queue|length > 0 %}
     <div class="row g-4 mb-4">
         <div class="col-12">
             <div class="card" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);">
@@ -26,25 +26,25 @@
                             <div class="row g-3">
                                 <div class="col-6 col-md-3">
                                     <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Counter</div>
-                                    <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600;">{{ user_queue.counter_name }}</div>
+                                    <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600;">{{ user_queue.get('counter_name', 'Unknown') }}</div>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Position</div>
-                                    <div style="color: var(--primary); font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;">#{{ user_queue.position }}</div>
+                                    <div style="color: var(--primary); font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;">#{{ user_queue.get('position', 0) }}</div>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Status</div>
                                     <div>
-                                        {% if user_queue.status == 'waiting' %}
+                                        {% if user_queue.get('status') == 'waiting' %}
                                         <span class="badge" style="background: rgba(210, 153, 34, 0.2); color: var(--warning); border: 1px solid var(--warning);">Waiting</span>
-                                        {% elif user_queue.status == 'called' %}
+                                        {% elif user_queue.get('status') == 'called' %}
                                         <span class="badge" style="background: rgba(126, 231, 135, 0.2); color: var(--accent); border: 1px solid var(--accent);">Your Turn!</span>
                                         {% endif %}
                                     </div>
                                 </div>
                                 <div class="col-6 col-md-3">
                                     <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Joined</div>
-                                    <div style="color: var(--text-primary); font-size: 0.9rem;">{{ user_queue.joined_at[:16] if user_queue.joined_at else '—' }}</div>
+                                    <div style="color: var(--text-primary); font-size: 0.9rem;">{{ user_queue.get('joined_at', '')[:16] if user_queue.get('joined_at') else '—' }}</div>
                                 </div>
                             </div>
                         </div>
@@ -70,7 +70,7 @@
                     <i class="bi bi-stars" style="color: var(--primary);"></i>
                     <span style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">Recommended</span>
                 </div>
-                <p style="color: var(--text-secondary); margin: 0;">{{ recommended_counter.name }} has the shortest queue (~{{ recommended_counter.average_wait_minutes }} min wait)</p>
+                <p style="color: var(--text-secondary); margin: 0;">{{ recommended_counter.get('name', 'Unknown') }} has the shortest queue (~{{ recommended_counter.get('average_wait_minutes', 0) }} min wait)</p>
             </div>
         </div>
     </div>
@@ -78,10 +78,11 @@
 
     <!-- Food Counters Grid -->
     <div class="row g-4">
+        {% if counter_data and counter_data|length > 0 %}
         {% for item in counter_data %}
         <div class="col-md-6 col-lg-4">
             <div class="card h-100" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); transition: var(--transition-slow);">
-                {% if item.counter.is_open %}
+                {% if item.counter.get('is_open', False) %}
                 <div style="position: absolute; top: 1rem; right: 1rem;">
                     <span class="badge" style="background: rgba(126, 231, 135, 0.15); color: var(--accent); border: 1px solid rgba(126, 231, 135, 0.3);">Open</span>
                 </div>
@@ -92,19 +93,19 @@
                 {% endif %}
                 
                 <div class="card-body" style="padding: 1.25rem;">
-                    <h5 class="mb-3" style="color: var(--text-primary); font-weight: 600;">{{ item.counter.name }}</h5>
+                    <h5 class="mb-3" style="color: var(--text-primary); font-weight: 600;">{{ item.counter.get('name', 'Unknown') }}</h5>
                     
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <div style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;">In Queue</div>
                             <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">
-                                {{ item.waiting_count }}
+                                {{ item.get('waiting_count', 0) }}
                             </div>
                         </div>
                         <div class="col-6">
                             <div style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;">Est. Wait</div>
                             <div style="color: var(--text-primary); font-size: 1.25rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">
-                                ~{{ item.counter.average_wait_minutes }}m
+                                ~{{ item.counter.get('average_wait_minutes', 0) }}m
                             </div>
                         </div>
                     </div>
@@ -112,26 +113,27 @@
                     <div class="mb-3">
                         <div style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;">Load</div>
                         <div class="preview-bar" style="height: 4px; background: var(--bg-hover); border-radius: 2px; margin-top: 0.375rem; overflow: hidden;">
-                            {% if item.load_percent < 40 %}
-                            <div class="preview-bar-fill" style="width: {{ item.load_percent }}%; background: var(--accent);"></div>
-                            {% elif item.load_percent < 70 %}
-                            <div class="preview-bar-fill" style="width: {{ item.load_percent }}%; background: var(--warning);"></div>
+                            {% set load = item.get('load_percent', 0) %}
+                            {% if load < 40 %}
+                            <div class="preview-bar-fill" style="width: {{ load }}%; background: var(--accent);"></div>
+                            {% elif load < 70 %}
+                            <div class="preview-bar-fill" style="width: {{ load }}%; background: var(--warning);"></div>
                             {% else %}
-                            <div class="preview-bar-fill" style="width: {{ item.load_percent }}%; background: var(--danger);"></div>
+                            <div class="preview-bar-fill" style="width: {{ load }}%; background: var(--danger);"></div>
                             {% endif %}
                         </div>
                     </div>
                     
-                    {% if item.counter.is_open %}
+                    {% if item.counter.get('is_open', False) %}
                         {% if user_queue %}
-                            {% if user_queue.counter_id == item.counter.id %}
+                            {% if user_queue.get('counter_id') == item.counter.get('id') %}
                             <button class="btn w-100" style="background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary);" disabled>
-                                Current Position #{{ user_queue.position }}
+                                Current Position #{{ user_queue.get('position', 0) }}
                             </button>
                             {% else %}
                             <form method="POST" action="{{ url_for('user.queue_switch') }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="counter_id" value="{{ item.counter.id }}">
+                                <input type="hidden" name="counter_id" value="{{ item.counter.get('id', 0) }}">
                                 <button type="submit" class="btn w-100" style="background: transparent; border: 1px solid var(--border); color: var(--text-secondary);">
                                     Switch to This Counter
                                 </button>
@@ -140,7 +142,7 @@
                         {% else %}
                         <form method="POST" action="{{ url_for('user.queue_join') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="counter_id" value="{{ item.counter.id }}">
+                            <input type="hidden" name="counter_id" value="{{ item.counter.get('id', 0) }}">
                             <button type="submit" class="btn w-100" style="background: var(--primary); border: none; color: var(--bg-deep); font-weight: 600;">
                                 Join Queue
                             </button>
@@ -155,8 +157,7 @@
             </div>
         </div>
         {% endfor %}
-        
-        {% if not counter_data %}
+        {% else %}
         <div class="col-12">
             <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; text-align: center;">
                 <i class="bi bi-shop" style="color: var(--text-muted); font-size: 2rem;"></i>

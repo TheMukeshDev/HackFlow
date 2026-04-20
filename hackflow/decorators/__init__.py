@@ -10,21 +10,30 @@ def login_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
+        user_id = session.get("user_id")
+        if not user_id:
             flash("Please log in to access this page.", "warning")
             return redirect(url_for("auth.login"))
+
+        # Check if account is still active
+        is_active = session.get("is_active", True)
+        if is_active is False:
+            session.clear()
+            flash("Your account has been deactivated.", "danger")
+            return redirect(url_for("auth.login"))
+
         return f(*args, **kwargs)
 
     return decorated_function
 
 
-def role_required(*allowed_roles):
+def role_required(*allowed_roles: str):
     """Require specific role(s) to access route."""
 
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if "user_id" not in session:
+            if not session.get("user_id"):
                 flash("Please log in to access this page.", "warning")
                 return redirect(url_for("auth.login"))
 
@@ -44,12 +53,12 @@ def volunteer_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
+        if not session.get("user_id"):
             flash("Please log in to access this page.", "warning")
             return redirect(url_for("auth.login"))
 
-        user_role = session.get("role") or ""
-        if not Role.can_access_volunteer(str(user_role)):
+        user_role = str(session.get("role", ""))
+        if not Role.can_access_volunteer(user_role):
             flash("Volunteer access required.", "danger")
             abort(403)
         return f(*args, **kwargs)
@@ -62,12 +71,12 @@ def participant_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
+        if not session.get("user_id"):
             flash("Please log in to access this page.", "warning")
             return redirect(url_for("auth.login"))
 
         user_role = session.get("role")
-        if user_role == Role.VOLUNTEER or user_role == Role.ADMIN:
+        if user_role in (Role.VOLUNTEER, Role.ADMIN):
             flash("Participant access required.", "danger")
             abort(403)
         return f(*args, **kwargs)
@@ -80,12 +89,11 @@ def admin_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
+        if not session.get("user_id"):
             flash("Please log in to access this page.", "warning")
             return redirect(url_for("auth.login"))
 
-        user_role = session.get("role")
-        if user_role != Role.ADMIN:
+        if session.get("role") != Role.ADMIN:
             flash("Administrator access required.", "danger")
             abort(403)
         return f(*args, **kwargs)

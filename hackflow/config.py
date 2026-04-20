@@ -29,16 +29,16 @@ class ConfigValidator:
     ]
 
     @classmethod
-    def validate(cls, config_name: str = None) -> List[str]:
+    def validate(cls, config_name: Optional[str] = None) -> List[str]:
         """Validate required environment variables."""
-        config_name = config_name or os.environ.get("FLASK_ENV", "development")
-        missing = []
+        env = config_name or os.environ.get("FLASK_ENV", "development")
+        missing: List[str] = []
 
         for var in cls.REQUIRED_VARS:
             if not os.environ.get(var):
                 missing.append(var)
 
-        if config_name == "production":
+        if env == "production":
             for var in cls.PRODUCTION_REQUIRED_VARS:
                 if not os.environ.get(var):
                     missing.append(var)
@@ -46,7 +46,7 @@ class ConfigValidator:
         return missing
 
     @classmethod
-    def validate_or_raise(cls, config_name: str = None):
+    def validate_or_raise(cls, config_name: Optional[str] = None) -> None:
         """Validate or raise exception."""
         missing = cls.validate(config_name)
         if missing:
@@ -55,7 +55,7 @@ class ConfigValidator:
             )
 
     @classmethod
-    def get_missing_vars(cls, config_name: str = None) -> List[str]:
+    def get_missing_vars(cls, config_name: Optional[str] = None) -> List[str]:
         """Get list of missing variables (non-raising)."""
         return cls.validate(config_name)
 

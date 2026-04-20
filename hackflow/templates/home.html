@@ -781,7 +781,6 @@
                         </a>
                     {% else %}
                         <a href="{{ url_for('auth.login') }}" class="btn-nav btn-signin">Sign In</a>
-                        <a href="{{ url_for('auth.register_volunteer') }}" class="btn-nav btn-outline-nav">Volunteer</a>
                         <a href="{{ url_for('auth.register') }}" class="btn-nav btn-primary-nav">Get Started</a>
                     {% endif %}
                 </div>
@@ -1021,8 +1020,8 @@
                 <a href="{{ url_for('auth.register') }}" class="btn-hero btn-hero-primary">
                     <i class="bi bi-rocket-takeoff"></i> Get Started
                 </a>
-                <a href="{{ url_for('auth.register_volunteer') }}" class="btn-hero btn-hero-secondary">
-                    <i class="bi bi-heart"></i> Apply as Volunteer
+                <a href="#features" class="btn-hero btn-hero-secondary">
+                    <i class="bi bi-arrow-down"></i> Explore Features
                 </a>
             </div>
         </div>
@@ -1059,9 +1058,9 @@
                 <div class="col-6 col-lg-2">
                     <h5 class="footer-title">Product</h5>
                     <ul class="footer-links">
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="{{ url_for('main.docs') }}">Documentation</a></li>
+                        <li><a href="{{ url_for('main.privacy') }}">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('main.terms') }}">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>

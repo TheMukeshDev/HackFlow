@@ -11,7 +11,7 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <h6>Total Waiting</h6>
-                    <h3>{{ stats.total_waiting }}</h3>
+                    <h3>{{ stats.get('total_waiting', 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -19,7 +19,7 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <h6>Zones</h6>
-                    <h3>{{ stats.zones }}</h3>
+                    <h3>{{ stats.get('zones', 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -27,7 +27,7 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <h6>Counters</h6>
-                    <h3>{{ stats.counters }}</h3>
+                    <h3>{{ stats.get('counters', 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -38,18 +38,20 @@
             <div class="card">
                 <div class="card-header"><h5>Crowd Zones</h5></div>
                 <div class="card-body">
-                    {% if zones %}
+                    {% if zones and zones|length > 0 %}
                     <table class="table">
                         <thead><tr><th>Zone</th><th>Count</th><th>Status</th></tr></thead>
                         <tbody>
                             {% for zone in zones %}
+                            {% set count = zone.get('current_count', 0) %}
+                            {% set capacity = zone.get('capacity', 1) %}
                             <tr>
-                                <td>{{ zone.name }}</td>
-                                <td>{{ zone.current_count }}/{{ zone.capacity }}</td>
+                                <td>{{ zone.get('name', 'Unknown') }}</td>
+                                <td>{{ count }}/{{ capacity }}</td>
                                 <td>
-                                    {% if zone.current_count < zone.capacity // 2 %}
+                                    {% if count < capacity // 2 %}
                                     <span class="badge bg-success">Low</span>
-                                    {% elif zone.current_count < zone.capacity %}
+                                    {% elif count < capacity %}
                                     <span class="badge bg-warning">Moderate</span>
                                     {% else %}
                                     <span class="badge bg-danger">Full</span>
@@ -60,7 +62,7 @@
                         </tbody>
                     </table>
                     {% else %}
-                    <p class="text-muted">No zones tracked.</p>
+                    <p class="text-muted">No zones available.</p>
                     {% endif %}
                 </div>
             </div>
@@ -68,28 +70,29 @@
         
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header"><h5>Counters</h5></div>
+                <div class="card-header"><h5>Food Counters</h5></div>
                 <div class="card-body">
-                    {% if counters %}
+                    {% if counters and counters|length > 0 %}
                     <table class="table">
-                        <thead><tr><th>Counter</th><th>Status</th></tr></thead>
+                        <thead><tr><th>Counter</th><th>Status</th><th>Capacity</th></tr></thead>
                         <tbody>
                             {% for counter in counters %}
                             <tr>
-                                <td>{{ counter.name }}</td>
+                                <td>{{ counter.get('name', 'Unknown') }}</td>
                                 <td>
-                                    {% if counter.is_open %}
+                                    {% if counter.get('is_open', False) %}
                                     <span class="badge bg-success">Open</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Closed</span>
                                     {% endif %}
                                 </td>
+                                <td>{{ counter.get('capacity', 'N/A') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                     {% else %}
-                    <p class="text-muted">No counters.</p>
+                    <p class="text-muted">No counters available.</p>
                     {% endif %}
                 </div>
             </div>

@@ -11,13 +11,15 @@
             <div class="card">
                 <div class="card-header"><h5>Zones</h5></div>
                 <div class="card-body">
-                    {% if zones %}
+                    {% if zones and zones|length > 0 %}
                     <ul class="list-group">
                         {% for zone in zones %}
+                        {% set count = zone.get('current_count', 0) %}
+                        {% set capacity = zone.get('capacity', 1) %}
                         <li class="list-group-item d-flex justify-content-between">
-                            {{ zone.name }}
-                            <span class="badge bg-{{ 'success' if zone.current_count < zone.capacity // 2 else 'warning' if zone.current_count < zone.capacity else 'danger' }}">
-                                {{ zone.current_count }}/{{ zone.capacity }}
+                            {{ zone.get('name', 'Unknown') }}
+                            <span class="badge bg-{{ 'success' if count < capacity // 2 else 'warning' if count < capacity else 'danger' }}">
+                                {{ count }}/{{ capacity }}
                             </span>
                         </li>
                         {% endfor %}
@@ -33,13 +35,13 @@
             <div class="card">
                 <div class="card-header"><h5>Food Counters</h5></div>
                 <div class="card-body">
-                    {% if counters %}
+                    {% if counters and counters|length > 0 %}
                     <ul class="list-group">
                         {% for counter in counters %}
                         <li class="list-group-item d-flex justify-content-between">
-                            {{ counter.name }}
-                            <span class="badge bg-{{ 'success' if counter.is_open else 'secondary' }}">
-                                {{ 'Open' if counter.is_open else 'Closed' }}
+                            {{ counter.get('name', 'Unknown') }}
+                            <span class="badge bg-{{ 'success' if counter.get('is_open', false) else 'secondary' }}">
+                                {{ 'Open' if counter.get('is_open', False) else 'Closed' }}
                             </span>
                         </li>
                         {% endfor %}
