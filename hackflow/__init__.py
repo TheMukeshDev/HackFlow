@@ -1,14 +1,15 @@
 """HackFlow Application Factory."""
 
 import os
+import logging
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 
-from hackflow.config import config_by_name
-
+from hackflow.config import config_by_name, ConfigValidator
+from hackflow.utils.logging import setup_logging, app_logger
 
 bcrypt = Bcrypt()
 csrf = CSRFProtect()
@@ -27,26 +28,26 @@ def create_app(config_name=None):
         static_folder="static",
     )
 
-    # Load configuration
     app.config.from_object(config_by_name.get(config_name, config_by_name["default"]))
 
-    # Ensure instance folder exists
+    setup_logging(app)
+
+    if config_name == "production":
+        config_by_name.get(config_name, config_by_name["default"]).init_app(app)
+
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
 
-    # Initialize extensions
     _init_extensions(app)
-
-    # Register blueprints
     _register_blueprints(app)
-
-    # Register error handlers
     _register_error_handlers(app)
-
-    # Register context processors
     _register_context_processors(app)
+
+    app_logger.init_app(app)
+
+    app.logger.info(f"HackFlow started in {config_name} mode")
 
     return app
 
@@ -57,7 +58,6 @@ def _init_extensions(app):
     csrf.init_app(app)
     limiter.init_app(app)
 
-    # Configure rate limiting
     app.config["RATELIMIT_ENABLED"] = app.config.get("RATELIMIT_ENABLED", True)
 
 
@@ -75,7 +75,6 @@ def _register_blueprints(app):
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api")
 
-    # Root route - Home page
     from flask import redirect, url_for, session, render_template
 
     @app.route("/")

@@ -1,11 +1,13 @@
 """User Blueprint Routes."""
 
+import logging
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from hackflow.database import get_supabase
 from hackflow.decorators import login_required, get_current_user
 from hackflow.services.auth_service import Role
 
 user_bp = Blueprint("user", __name__, url_prefix="/user")
+logger = logging.getLogger(__name__)
 
 
 @user_bp.route("/dashboard")
@@ -104,7 +106,7 @@ def dashboard():
 
     except Exception as e:
         flash("Error loading dashboard data.", "danger")
-        print(f"Dashboard error: {e}")
+        logger.error(f"Dashboard error: {str(e)}")
         in_queue = None
         in_queue_counter = None
         counters = []
@@ -214,7 +216,7 @@ def queue():
 
     except Exception as e:
         flash("Error loading queue data.", "danger")
-        print(f"Queue error: {e}")
+        logger.error(f"Queue error: {str(e)}")
         counter_data = []
         user_queue = None
         recommended_counter = None
@@ -336,7 +338,7 @@ def help():
 
         except Exception as e:
             flash("Error submitting request.", "danger")
-            print(f"Help request error: {e}")
+            logger.error(f"Help request error: {str(e)}")
 
     return render_template("user/help.html", user=user)
 
@@ -397,7 +399,7 @@ def queue_join():
         flash(str(e), "danger")
     except Exception as e:
         flash("Error joining queue.", "danger")
-        print(f"Queue join error: {e}")
+        logger.error(f"Queue join error: {str(e)}")
 
     return redirect(url_for("user.queue"))
 
@@ -418,7 +420,7 @@ def queue_leave():
         flash(str(e), "danger")
     except Exception as e:
         flash("Error leaving queue.", "danger")
-        print(f"Queue leave error: {e}")
+        logger.error(f"Queue leave error: {str(e)}")
 
     return redirect(url_for("user.queue"))
 
@@ -444,7 +446,7 @@ def queue_switch():
         flash(str(e), "danger")
     except Exception as e:
         flash("Error switching counter.", "danger")
-        print(f"Queue switch error: {e}")
+        logger.error(f"Queue switch error: {str(e)}")
 
     return redirect(url_for("user.queue"))
 

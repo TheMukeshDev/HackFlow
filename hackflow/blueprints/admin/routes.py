@@ -1,12 +1,14 @@
 """Admin Blueprint Routes."""
 
 import os
+import logging
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from hackflow.database import get_supabase
 from hackflow.decorators import admin_required, get_current_user
-from hackflow.services.auth_service import Role
+from hackflow.services.auth_service import Role, AuthService
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+logger = logging.getLogger(__name__)
 
 
 def _ensure_admin_exists():
@@ -22,7 +24,6 @@ def _ensure_admin_exists():
 
     try:
         supabase = get_supabase()
-        # Check if admin exists
         existing = (
             supabase.table("users")
             .select("id")
@@ -31,8 +32,6 @@ def _ensure_admin_exists():
         )
 
         if not existing.data:
-            from hackflow.services.auth_service import AuthService
-
             password_hash = AuthService.hash_password(admin_password)
 
             new_admin = {
@@ -45,9 +44,9 @@ def _ensure_admin_exists():
                 "is_active": True,
             }
             supabase.table("users").insert(new_admin).execute()
-            print(f"Admin account created: {admin_email}")
+            logger.info(f"Admin account created: {admin_email}")
     except Exception as e:
-        print(f"Admin creation warning: {e}")
+        logger.warning(f"Admin creation: {str(e)}")
 
 
 # Try to ensure admin exists on import

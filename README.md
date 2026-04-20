@@ -90,13 +90,21 @@ The app will be available at `http://localhost:5000`
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_KEY` | Supabase anon/public key |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
-| `SECRET_KEY` | Flask secret key for sessions |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_URL` | Yes | Your Supabase project URL |
+| `SUPABASE_KEY` | Yes | Supabase anon/public key |
+| `SUPABASE_SERVICE_KEY` | No | Supabase service role key |
+| `GOOGLE_CLIENT_ID` | No | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | No | Google OAuth Client Secret |
+| `GOOGLE_REDIRECT_URI` | No | OAuth callback URL |
+| `SECRET_KEY` | Yes | Flask secret key (generate random) |
+| `FLASK_ENV` | No | development/production |
+| `PORT` | No | Server port (default: 8080) |
+| `BCRYPT_LOG_ROUNDS` | No | Password hashing rounds (default: 12) |
+| `RATELIMIT_ENABLED` | No | Enable rate limiting |
+| `SESSION_COOKIE_SECURE` | No | Require HTTPS for cookies |
+| `WTF_CSRF_ENABLED` | No | Enable CSRF protection |
 
 ---
 
@@ -131,7 +139,87 @@ The app will be available at `http://localhost:5000`
 - Role-based access control (RBAC)
 - Backend validation for all requests
 - Secure session management
-- Password hashing with Werkzeug
+- Password hashing with bcrypt
+- CSRF protection in production
+- Secure cookie settings (HttpOnly, SameSite)
+
+---
+
+## Testing
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install pytest pytest-flask
+
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=hackflow --cov-report=html
+```
+
+### Test Structure
+
+- `tests/test_auth.py` - Authentication routes and security
+- `tests/test_protected.py` - Protected routes and authorization
+
+### Test Coverage
+
+- Login/logout flows
+- Registration validation
+- Role-based access control
+- Session management
+- API security
+
+---
+
+## Deployment (Google Cloud Run)
+
+### 1. Build the Docker image
+
+```bash
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/hackflow
+```
+
+### 2. Deploy to Cloud Run
+
+```bash
+gcloud run deploy hackflow \
+  --image gcr.io/YOUR_PROJECT_ID/hackflow \
+  --platform managed \
+  --region asia-south2 \
+  --allow-unauthenticated
+```
+
+### 3. Set environment variables
+
+```bash
+gcloud run services update hackflow \
+  --update-env-vars "\
+SUPABASE_URL=your-supabase-url,\
+SUPABASE_KEY=your-supabase-key,\
+FLASK_ENV=production,\
+SECRET_KEY=your-secure-secret,\
+GOOGLE_CLIENT_ID=your-client-id,\
+GOOGLE_CLIENT_SECRET=your-secret,\
+GOOGLE_REDIRECT_URI=https://your-app.run.app/auth/google/callback" \
+  --region asia-south2
+```
+
+### 4. Configure Google OAuth
+
+In Google Cloud Console > APIs & Services > Credentials:
+
+- **Authorized redirect URIs:**
+  ```
+  https://your-app.run.app/auth/google/callback
+  ```
+- **Authorized JavaScript origins:**
+  ```
+  https://your-app.run.app
+  ```
 
 ---
 

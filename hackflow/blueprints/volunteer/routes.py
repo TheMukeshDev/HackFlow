@@ -1,5 +1,6 @@
 """Volunteer Blueprint Routes."""
 
+import logging
 from flask import (
     Blueprint,
     render_template,
@@ -14,6 +15,7 @@ from hackflow.database import get_supabase
 from hackflow.decorators import login_required, volunteer_required, get_current_user
 
 volunteer_bp = Blueprint("volunteer", __name__, url_prefix="/volunteer")
+logger = logging.getLogger(__name__)
 
 
 @volunteer_bp.route("/dashboard")
@@ -22,7 +24,6 @@ volunteer_bp = Blueprint("volunteer", __name__, url_prefix="/volunteer")
 def dashboard():
     """Volunteer overview dashboard."""
     user = get_current_user()
-    supabase = get_supabase()
 
     stats = {
         "waiting": 0,
@@ -35,73 +36,95 @@ def dashboard():
     recent_requests_list = []
 
     try:
-        # Queue stats - waiting
-        r1 = (
-            supabase.table("queue_entries")
-            .select("id", count="exact")
-            .eq("status", "waiting")
-            .execute()
-        )
-        stats["waiting"] = getattr(r1, "count", 0) or 0
+        supabase = get_supabase()
 
-        # Queue stats - called
-        r2 = (
-            supabase.table("queue_entries")
-            .select("id", count="exact")
-            .eq("status", "called")
-            .execute()
-        )
-        stats["called"] = getattr(r2, "count", 0) or 0
+        try:
+            r1 = (
+                supabase.table("queue_entries")
+                .select("id", count="exact")
+                .eq("status", "waiting")
+                .execute()
+            )
+            stats["waiting"] = getattr(r1, "count", 0) or 0
+        except Exception:
+            pass
 
-        # Help requests - pending
-        r3 = (
-            supabase.table("help_requests")
-            .select("id", count="exact")
-            .eq("status", "pending")
-            .execute()
-        )
-        stats["pending_requests"] = getattr(r3, "count", 0) or 0
+        try:
+            r2 = (
+                supabase.table("queue_entries")
+                .select("id", count="exact")
+                .eq("status", "called")
+                .execute()
+            )
+            stats["called"] = getattr(r2, "count", 0) or 0
+        except Exception:
+            pass
 
-        # Help requests - in progress
-        r4 = (
-            supabase.table("help_requests")
-            .select("id", count="exact")
-            .eq("status", "in_progress")
-            .execute()
-        )
-        stats["in_progress"] = getattr(r4, "count", 0) or 0
+        try:
+            r3 = (
+                supabase.table("help_requests")
+                .select("id", count="exact")
+                .eq("status", "pending")
+                .execute()
+            )
+            stats["pending_requests"] = getattr(r3, "count", 0) or 0
+        except Exception:
+            pass
 
-        # Active counters
-        r5 = (
-            supabase.table("food_counters")
-            .select("id", count="exact")
-            .eq("is_active", True)
-            .execute()
-        )
-        stats["active_counters"] = getattr(r5, "count", 0) or 0
+        try:
+            r4 = (
+                supabase.table("help_requests")
+                .select("id", count="exact")
+                .eq("status", "in_progress")
+                .execute()
+            )
+            stats["in_progress"] = getattr(r4, "count", 0) or 0
+        except Exception:
+            pass
 
-        # Recent queue activity
-        r6 = (
-            supabase.table("queue_entries")
-            .select("*")
-            .order("joined_at", desc=True)
-            .limit(10)
-            .execute()
-        )
-        recent_queue_list = r6.data if r6.data else []
+        try:
+            r5 = (
+                supabase.table("food_counters")
+                .select("id", count="exact")
+                .eq("is_active", True)
+                .execute()
+            )
+            stats["active_counters"] = getattr(r5, "count", 0) or 0
+        except Exception:
+            pass
 
-        # Recent help requests
-        r7 = (
-            supabase.table("help_requests")
-            .select("*")
-            .order("created_at", desc=True)
-            .limit(10)
-            .execute()
-        )
-        recent_requests_list = r7.data if r7.data else []
+        try:
+            r6 = (
+                supabase.table("queue_entries")
+                .select("*")
+                .order("joined_at", desc=True)
+                .limit(10)
+                .execute()
+            )
+            recent_queue_list = r6.data if r6.data else []
+        except Exception:
+            pass
+
+        try:
+            r7 = (
+                supabase.table("help_requests")
+                .select("*")
+                .order("created_at", desc=True)
+                .limit(10)
+                .execute()
+            )
+            recent_requests_list = r7.data if r7.data else []
+        except Exception:
+            pass
 
     except Exception as e:
-        print(f"Volunteer dashboard error: {e}")
+        logger.error(f"Volunteer dashboard error: {str(e)}")
+
+    stats.setdefault("waiting", 0)
+    stats.setdefault("called", 0)
+    stats.setdefault("pending_requests", 0)
+    stats.setdefault("in_progress", 0)
+    stats.setdefault("active_counters", 0)
 
     return render_template(
         "volunteer/dashboard.html",
@@ -193,7 +216,7 @@ def food():
 
     except Exception as e:
         flash("Error loading food data.", "danger")
-        print(f"Food operations error: {e}")
+        logger.error(f"Food operations error: {str(e)}")
         counter_data = []
         total_waiting = 0
         total_called = 0
@@ -343,7 +366,7 @@ def broadcasts():
 
         except Exception as e:
             flash("Error sending broadcast.", "danger")
-            print(f"Broadcast error: {e}")
+            logger.error(f"Broadcast error: {str(e)}")
 
     try:
         supabase = get_supabase()
@@ -468,7 +491,7 @@ def queue_call(counter_id):
             flash("No one waiting in queue.", "warning")
     except Exception as e:
         flash("Error calling next person.", "danger")
-        print(f"Queue call error: {e}")
+        logger.error(f"Queue call error: {str(e)}")
 
     return redirect(url_for("volunteer.food"))
 
@@ -488,7 +511,7 @@ def queue_complete(entry_id):
         flash("Entry completed.", "success")
     except Exception as e:
         flash("Error completing entry.", "danger")
-        print(f"Queue complete error: {e}")
+        logger.error(f"Queue complete error: {str(e)}")
 
     return redirect(url_for("volunteer.food"))
 
@@ -522,6 +545,6 @@ def counter_toggle(counter_id):
         )
     except Exception as e:
         flash("Error toggling counter.", "danger")
-        print(f"Counter toggle error: {e}")
+        logger.error(f"Counter toggle error: {str(e)}")
 
     return redirect(url_for("volunteer.food"))

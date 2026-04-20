@@ -2,14 +2,12 @@
 .git
 .gitignore
 
-# Python
+# Python cache
 __pycache__
 *.pyc
 *.pyo
 *.pyd
 .Python
-*.so
-*.egg
 *.egg-info
 dist
 build
@@ -34,29 +32,27 @@ Thumbs.db
 .pytest_cache
 .coverage
 htmlcov
+tests/
 
 # Documentation
 *.md
 docs
+README.md
 
 # CI/CD
 .github
-.gitlab-ci.yml
 
-# Docker
-Dockerfile
-.dockerignore
-
-# Docker volume
-volume
-
-# Instance folder (runtime generated)
-instance
-
-# Log files
-*.log
-logs
-
-# Local environment
+# Development files
+.env
 .env.local
 .env.*.local
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Cache folders
+.ruff_cache/
+
+# Logs
+logs/
+*.log

@@ -2,6 +2,8 @@
 
 import os
 import secrets
+import logging
+import time
 from urllib.parse import urlencode
 from flask import (
     Blueprint,
@@ -11,6 +13,7 @@ from flask import (
     url_for,
     flash,
     session,
+    current_app,
 )
 from hackflow.database import get_supabase
 from hackflow.services.auth_service import AuthService, Role
@@ -18,14 +21,36 @@ from hackflow.decorators import set_current_user, clear_current_user, login_requ
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+logger = logging.getLogger(__name__)
+
 
 def _get_google_redirect_uri():
-    """Get the Google redirect URI based on environment."""
-    base_url = os.environ.get(
-        "GOOGLE_REDIRECT_URI",
-        "https://hackflow-1048267671039.asia-south2.run.app/auth/google/callback",
-    )
-    return base_url
+    """Get the Google redirect URI from environment."""
+    base_url = os.environ.get("GOOGLE_REDIRECT_URI")
+    if base_url:
+        return base_url
+
+    flask_env = os.environ.get("FLASK_ENV", "production")
+    if flask_env == "development":
+        port = os.environ.get("PORT", "8080")
+        return f"http://localhost:{port}/auth/google/callback"
+
+    raise ValueError("GOOGLE_REDIRECT_URI environment variable is not set")
+
+
+def _generate_oauth_state():
+    """Generate secure OAuth state parameter."""
+    state_data = f"{secrets.token_hex(16)}:{int(time.time())}"
+    return state_data
+
+
+def _validate_oauth_state(state: str, stored_state: str) -> bool:
+    """Validate OAuth state parameter to prevent CSRF."""
+    if not state or not stored_state:
+        return False
+    if state != stored_state:
+        return False
+    return True
 
 
 def _check_profile_complete(user):
@@ -33,6 +58,22 @@ def _check_profile_complete(user):
     required_fields = ["full_name", "email"]
     missing = [f for f in required_fields if not user.get(f)]
     return missing
+
+
+def _generate_unique_username(supabase, base_username: str) -> str:
+    """Generate a unique username by appending a counter if needed."""
+    username = base_username[:50]
+    base_username = username
+    counter = 1
+
+    while True:
+        check = supabase.table("users").select("id").eq("username", username).execute()
+        if not check.data:
+            break
+        username = f"{base_username}{counter}"
+        counter += 1
+
+    return username
 
 
 def _create_or_login_google_user(google_user_info):
@@ -47,22 +88,16 @@ def _create_or_login_google_user(google_user_info):
 
     if existing.data:
         user = existing.data[0]
-        if not user.get("is_active", False):
+        is_active = user.get("is_active")
+        if is_active is False:
             return None, "Account has been deactivated"
         supabase.table("users").update({"updated_at": "now()"}).eq(
             "id", user["id"]
         ).execute()
+        logger.info(f"Google user logged in: {email}")
         return user, None
 
-    username = email.split("@")[0][:50]
-    base_username = username
-    counter = 1
-    while True:
-        check = supabase.table("users").select("id").eq("username", username).execute()
-        if not check.data:
-            break
-        username = f"{base_username}{counter}"
-        counter += 1
+    username = _generate_unique_username(supabase, email.split("@")[0])
 
     new_user = {
         "email": email,
@@ -78,7 +113,9 @@ def _create_or_login_google_user(google_user_info):
 
     result = supabase.table("users").insert(new_user).execute()
     if result.data:
+        logger.info(f"New Google user created: {email}")
         return result.data[0], None
+    logger.error(f"Failed to create Google user: {email}")
     return None, "Failed to create user account"
 
 
@@ -105,25 +142,36 @@ def login():
             response = supabase.table("users").select("*").eq("email", email).execute()
 
             if not response.data:
+                logger.warning(f"Login attempt for non-existent user: {email}")
                 flash("Invalid email or password.", "danger")
                 return render_template("auth/login.html")
 
             user = response.data[0]
 
-            if not user.get("is_active", False):
+            is_active = user.get("is_active")
+            if is_active is False:
+                logger.warning(f"Login attempt for inactive user: {email}")
                 flash("Your account has been deactivated.", "danger")
                 return render_template("auth/login.html")
 
-            if user.get("password_hash", "").startswith("google_"):
+            password_hash = user.get("password_hash", "")
+
+            if not password_hash:
+                logger.error(f"User has no password_hash: {email}")
+                flash("Account error. Please contact support.", "danger")
+                return render_template("auth/login.html")
+
+            if password_hash.startswith("google_"):
                 flash("Please sign in with Google.", "warning")
                 return render_template("auth/login.html")
 
-            if not AuthService.verify_password(password, user["password_hash"]):
+            if not AuthService.verify_password(password, password_hash):
+                logger.warning(f"Invalid password attempt for user: {email}")
                 flash("Invalid email or password.", "danger")
                 return render_template("auth/login.html")
 
-            set_current_user(user)
-            session.permanent = True
+            _set_user_session(user)
+            logger.info(f"User logged in successfully: {email}")
 
             flash(
                 f"Welcome back, {user.get('full_name', user.get('username'))}!",
@@ -141,10 +189,24 @@ def login():
             return redirect(url_for("user.dashboard"))
 
         except Exception as e:
+            logger.error(f"Login error for {email}: {str(e)}", exc_info=True)
             flash("An error occurred. Please try again.", "danger")
-            print(f"Login error: {e}")
 
     return render_template("auth/login.html")
+
+
+def _set_user_session(user):
+    """Set all required user data in session."""
+    session["user_id"] = user.get("id")
+    session["email"] = user.get("email")
+    session["username"] = user.get("username")
+    session["role"] = user.get("role", "participant")
+    session["full_name"] = user.get("full_name")
+    session["is_active"] = user.get("is_active", True)
+    session["profile_complete"] = user.get("profile_complete", False)
+    session.permanent = True
+    session["login_time"] = int(time.time())
+    session["last_activity"] = int(time.time())
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -178,23 +240,11 @@ def register():
             supabase = get_supabase()
             response = supabase.table("users").select("id").eq("email", email).execute()
             if response.data:
+                logger.info(f"Registration attempt for existing email: {email}")
                 flash("Email already registered. Please sign in.", "danger")
                 return render_template("auth/register.html")
 
-            username = email.split("@")[0][:50]
-            base_username = username
-            counter = 1
-            while True:
-                check = (
-                    supabase.table("users")
-                    .select("id")
-                    .eq("username", username)
-                    .execute()
-                )
-                if not check.data:
-                    break
-                username = f"{base_username}{counter}"
-                counter += 1
+            username = _generate_unique_username(supabase, email.split("@")[0])
 
             password_hash = AuthService.hash_password(password)
             new_user = {
@@ -203,16 +253,25 @@ def register():
                 "password_hash": password_hash,
                 "full_name": full_name,
                 "role": "participant",
+                "is_active": True,
                 "provider": "email",
+                "profile_complete": False,
             }
 
-            supabase.table("users").insert(new_user).execute()
-            flash("Account created! Please sign in.", "success")
+            result = supabase.table("users").insert(new_user).execute()
+
+            if result.data:
+                logger.info(f"New user registered: {email}")
+                flash("Account created! Please sign in.", "success")
+            else:
+                logger.error(f"Failed to create user: {email}")
+                flash("Failed to create account. Please try again.", "danger")
+
             return redirect(url_for("auth.login"))
 
         except Exception as e:
+            logger.error(f"Registration error for {email}: {str(e)}", exc_info=True)
             flash("An error occurred. Please try again.", "danger")
-            print(f"Registration error: {e}")
 
     return render_template("auth/register.html")
 
@@ -250,23 +309,13 @@ def register_volunteer():
             supabase = get_supabase()
             response = supabase.table("users").select("id").eq("email", email).execute()
             if response.data:
+                logger.info(
+                    f"Volunteer registration attempt for existing email: {email}"
+                )
                 flash("Email already registered. Please sign in.", "danger")
                 return render_template("auth/register_volunteer.html")
 
-            username = email.split("@")[0][:50]
-            base_username = username
-            counter = 1
-            while True:
-                check = (
-                    supabase.table("users")
-                    .select("id")
-                    .eq("username", username)
-                    .execute()
-                )
-                if not check.data:
-                    break
-                username = f"{base_username}{counter}"
-                counter += 1
+            username = _generate_unique_username(supabase, email.split("@")[0])
 
             password_hash = AuthService.hash_password(password)
             new_user = {
@@ -274,27 +323,33 @@ def register_volunteer():
                 "username": username,
                 "password_hash": password_hash,
                 "full_name": full_name,
-                "role": "participant",
+                "role": "pending_volunteer",
+                "is_active": True,
                 "provider": "email",
+                "college": college,
+                "phone": phone,
+                "profile_complete": False,
             }
 
             result = supabase.table("users").insert(new_user).execute()
 
             if result.data:
-                # Update to pending_volunteer
-                supabase.table("users").update({"role": "pending_volunteer"}).eq(
-                    "id", result.data[0]["id"]
-                ).execute()
+                logger.info(f"Volunteer application submitted: {email}")
+                flash(
+                    "Volunteer application submitted! An admin will review your request.",
+                    "info",
+                )
+            else:
+                logger.error(f"Failed to create volunteer: {email}")
+                flash("Failed to submit application. Please try again.", "danger")
 
-            flash(
-                "Volunteer application submitted! An admin will review your request.",
-                "info",
-            )
             return redirect(url_for("auth.login"))
 
         except Exception as e:
+            logger.error(
+                f"Volunteer registration error for {email}: {str(e)}", exc_info=True
+            )
             flash("An error occurred. Please try again.", "danger")
-            print(f"Volunteer registration error: {e}")
 
     return render_template("auth/register_volunteer.html")
 
@@ -310,6 +365,10 @@ def google_login():
         flash("Google sign-in is not configured.", "warning")
         return redirect(url_for("auth.login"))
 
+    state = _generate_oauth_state()
+    session["oauth_state"] = state
+    session["oauth_start_time"] = int(time.time())
+
     redirect_uri = _get_google_redirect_uri()
     params = {
         "client_id": google_client_id,
@@ -318,9 +377,11 @@ def google_login():
         "scope": "openid email profile",
         "access_type": "offline",
         "prompt": "consent",
+        "state": state,
     }
 
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    logger.info("Google OAuth initiated")
     return redirect(auth_url)
 
 
@@ -329,13 +390,32 @@ def google_callback():
     """Handle Google OAuth callback."""
     error = request.args.get("error")
     if error:
+        logger.warning(f"Google OAuth error: {error}")
         flash(f"Google sign-in failed: {error}", "danger")
         return redirect(url_for("auth.login"))
 
     code = request.args.get("code")
+    state = request.args.get("state")
+
     if not code:
         flash("No authorization code received.", "danger")
         return redirect(url_for("auth.login"))
+
+    stored_state = session.get("oauth_state")
+    oauth_time = session.get("oauth_start_time", 0)
+
+    if not _validate_oauth_state(state, stored_state):
+        logger.warning("Invalid OAuth state - possible CSRF attack")
+        flash("Invalid request. Please try again.", "danger")
+        return redirect(url_for("auth.login"))
+
+    if int(time.time()) - oauth_time > 600:
+        logger.warning("OAuth state expired")
+        flash("Session expired. Please try again.", "danger")
+        return redirect(url_for("auth.login"))
+
+    session.pop("oauth_state", None)
+    session.pop("oauth_start_time", None)
 
     try:
         google_client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
@@ -353,10 +433,12 @@ def google_callback():
                 "grant_type": "authorization_code",
                 "redirect_uri": redirect_uri,
             },
+            timeout=10,
         )
 
         if token_response.status_code != 200:
-            flash(f"Token exchange failed: {token_response.text[:100]}", "danger")
+            logger.error(f"Token exchange failed: {token_response.text[:100]}")
+            flash(f"Token exchange failed. Please try again.", "danger")
             return redirect(url_for("auth.login"))
 
         tokens = token_response.json()
@@ -365,9 +447,11 @@ def google_callback():
         userinfo_response = requests.get(
             "https://www.googleapis.com/oauth2/v2/userinfo",
             headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
         )
 
         if userinfo_response.status_code != 200:
+            logger.error("Failed to get user info from Google")
             flash("Failed to get user information.", "danger")
             return redirect(url_for("auth.login"))
 
@@ -378,8 +462,8 @@ def google_callback():
             flash(error, "danger")
             return redirect(url_for("auth.login"))
 
-        set_current_user(user)
-        session.permanent = True
+        _set_user_session(user)
+        logger.info(f"Google user authenticated: {user.get('email')}")
 
         missing = _check_profile_complete(user)
         if missing:
@@ -394,7 +478,7 @@ def google_callback():
         return redirect(url_for("user.dashboard"))
 
     except Exception as e:
-        print(f"Google callback error: {e}")
+        logger.error(f"Google callback error: {str(e)}", exc_info=True)
         flash("An error occurred during Google sign-in.", "danger")
         return redirect(url_for("auth.login"))
 
@@ -404,6 +488,7 @@ def complete_profile():
     """Complete profile for users with missing required fields."""
     user_id = session.get("user_id")
     if not user_id:
+        flash("Please log in first.", "warning")
         return redirect(url_for("auth.login"))
 
     if request.method == "POST":
@@ -430,7 +515,10 @@ def complete_profile():
             if result.data:
                 session["full_name"] = full_name
                 session["profile_complete"] = True
+                stored_user = result.data[0]
+                session["role"] = stored_user.get("role", "participant")
                 flash("Profile completed!", "success")
+                logger.info(f"Profile completed for user_id: {user_id}")
 
                 user_role = session.get("role")
                 if user_role == "admin":
@@ -442,18 +530,30 @@ def complete_profile():
                 flash("Failed to update profile.", "danger")
 
         except Exception as e:
+            logger.error(f"Profile completion error: {str(e)}", exc_info=True)
             flash("An error occurred.", "danger")
-            print(f"Profile completion error: {e}")
 
-    return render_template("auth/complete_profile.html")
+    try:
+        supabase = get_supabase()
+        response = supabase.table("users").select("*").eq("id", user_id).execute()
+        user = response.data[0] if response.data else None
+    except Exception as e:
+        logger.error(f"Profile load error: {str(e)}", exc_info=True)
+        flash("Error loading profile.", "danger")
+        user = None
+
+    return render_template("auth/complete_profile.html", user=user)
 
 
 @auth_bp.route("/logout")
 def logout():
     """User logout."""
+    user_id = session.get("user_id")
     user_name = session.get("full_name", "User")
+    user_email = session.get("email")
     clear_current_user()
     session.clear()
+    logger.info(f"User logged out: {user_email} (user_id: {user_id})")
     flash(f"Goodbye, {user_name}!", "info")
     return redirect(url_for("index"))
 
@@ -505,11 +605,15 @@ def profile():
                 pw_hash = response.data[0].get("password_hash", "")
                 if not pw_hash.startswith("google_"):
                     if not AuthService.verify_password(current_password, pw_hash):
+                        logger.warning(
+                            f"Invalid current password for user_id: {user_id}"
+                        )
                         flash("Current password is incorrect.", "danger")
                         return render_template("auth/profile.html")
                     update_data["password_hash"] = AuthService.hash_password(
                         new_password
                     )
+                    logger.info(f"Password changed for user_id: {user_id}")
 
             response = (
                 supabase.table("users").update(update_data).eq("id", user_id).execute()
@@ -517,18 +621,20 @@ def profile():
             if response.data:
                 session["full_name"] = update_data["full_name"]
                 flash("Profile updated successfully.", "success")
+                logger.info(f"Profile updated for user_id: {user_id}")
             else:
                 flash("Update failed.", "danger")
 
         except Exception as e:
+            logger.error(f"Profile update error: {str(e)}", exc_info=True)
             flash("An error occurred.", "danger")
-            print(f"Profile update error: {e}")
 
     try:
         supabase = get_supabase()
         response = supabase.table("users").select("*").eq("id", user_id).execute()
         user = response.data[0] if response.data else None
     except Exception as e:
+        logger.error(f"Profile load error: {str(e)}", exc_info=True)
         flash("Error loading profile.", "danger")
         user = None
 

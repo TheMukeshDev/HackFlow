@@ -41,10 +41,11 @@ class Role:
     """User roles."""
 
     PARTICIPANT = "participant"
+    PENDING_VOLUNTEER = "pending_volunteer"
     VOLUNTEER = "volunteer"
     ADMIN = "admin"
 
-    ALL = [PARTICIPANT, VOLUNTEER, ADMIN]
+    ALL = [PARTICIPANT, PENDING_VOLUNTEER, VOLUNTEER, ADMIN]
 
     @classmethod
     def is_valid(cls, role: str) -> bool:
