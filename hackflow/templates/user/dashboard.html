@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - HackFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-layout {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1 class="welcome-title">Welcome back, {{ user.full_name or user.username }}!</h1>
+        <p class="welcome-subtitle">
+            {% if in_queue and in_queue_counter %}
+            You are currently in <strong>{{ in_queue_counter.name }}</strong> queue - position {{ in_queue.position }}
+            {% else %}
+            Explore available counters and join a queue
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <!-- Queue Status Card -->
+        <div class="summary-card">
+            <div class="card-icon primary">
+                <i class="bi bi-ticket-detective"></i>
+            </div>
+            <div class="card-label">Queue Status</div>
+            {% if in_queue %}
+            <div class="card-value">Position {{ in_queue.position }}</div>
+            <div class="card-subtext">
+                <span class="status-badge active"><i class="bi bi-circle-fill"></i> In Queue</span>
+            </div>
+            {% else %}
+            <div class="card-value">Not Joined</div>
+            <div class="card-subtext">
+                <span class="status-badge inactive"><i class="bi bi-x-circle"></i> Waiting</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Open Counter Card -->
+        <div class="summary-card">
+            <div class="card-icon success">
+                <i class="bi bi-shop"></i>
+            </div>
+            <div class="card-label">Open Counters</div>
+            <div class="card-value">{{ counters|length }}</div>
+            <div class="card-subtext">
+                {% if counters|length > 0 %}
+                <span class="status-badge active"><i class="bi bi-check-circle"></i> Available Now</span>
+                {% else %}
+                <span class="status-badge inactive"><i class="bi bi-clock"></i> Check Back Later</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Notifications Card -->
+        <div class="summary-card">
+            <div class="card-icon warning">
+                <i class="bi bi-bell"></i>
+            </div>
+            <div class="card-label">Notifications</div>
+            <div class="card-value">{{ notifications|length }}</div>
+            <div class="card-subtext">
+                {% if notifications|length > 0 %}
+                <span class="status-badge waiting"><i class="bi bi-envelope"></i> Unread</span>
+                {% else %}
+                <span class="status-badge inactive"><i class="bi bi-check2-all"></i> All Clear</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Estimated Wait Card -->
+        <div class="summary-card">
+            <div class="card-icon info">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="card-label">Est. Wait</div>
+            {% if in_queue and in_queue_counter %}
+            <div class="card-value">{{ in_queue.position * 5 }} min</div>
+            <div class="card-subtext">
+                <span class="status-badge waiting"><i class="bi bi-clock"></i> Approximate</span>
+            </div>
+            {% else %}
+            <div class="card-value">--</div>
+            <div class="card-subtext">
+                <span class="status-badge inactive"><i class="bi bi-dash"></i> Join a queue</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- My Current Queue (Priority Section) -->
+    {% if in_queue and in_queue_counter %}
+    <div class="dashboard-section current-queue-section">
+        <div class="section-header">
+            <h3 class="section-title"><i class="bi bi-ticket-detective"></i> My Current Queue</h3>
+            <span class="status-badge {% if in_queue.status == 'called' %}ready{% else %}waiting{% endif %}">
+                {% if in_queue.status == 'called' %}<i class="bi bi-bell-fill"></i> Ready!{% else %}<i class="bi bi-hourglass"></i> Waiting{% endif %}
+            </span>
+        </div>
+        <div class="section-body">
+            <div class="queue-details">
+                <div class="queue-info">
+                    <div class="queue-counter-name">{{ in_queue_counter.name }}</div>
+                    <div class="queue-location"><i class="bi bi-geo-alt"></i> {{ in_queue_counter.location or 'Main Hall' }}</div>
+                </div>
+                <div class="queue-position">
+                    <div class="position-label">Your Position</div>
+                    <div class="position-value">#{{ in_queue.position }}</div>
+                </div>
+                <div class="queue-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Joined</span>
+                        <span class="meta-value">{{ in_queue.joined_at[:16] if in_queue.joined_at else 'Just now' }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Est. Wait</span>
+                        <span class="meta-value">{{ in_queue.position * 5 }} min</span>
+                    </div>
+                </div>
+            </div>
+            <div class="queue-actions">
+                <form method="POST" action="{{ url_for('user.queue_leave') }}" class="d-inline">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-box-arrow-left"></i> Leave Queue
+                    </button>
+                </form>
+                <a href="{{ url_for('user.queue') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left-right"></i> Switch Counter
+                </a>
+                <button onclick="location.reload()" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-repeat"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Quick Join Prompt when not in queue -->
+    <div class="dashboard-section prompt-section">
+        <div class="section-body">
+            <div class="prompt-content">
+                <i class="bi bi-emoji-smile"></i>
+                <div class="prompt-text">
+                    <h4>You are not in any queue yet</h4>
+                    <p>Select a counter below to join the queue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommended Counter -->
+    {% if recommended_counter and not in_queue %}
+    <div class="dashboard-section recommended-section">
+        <div class="section-header">
+            <h3 class="section-title"><i class="bi bi-star"></i> Recommended for You</h3>
+        </div>
+        <div class="section-body">
+            <div class="recommended-card">
+                <div class="recommended-info">
+                    <div class="rec-name">{{ recommended_counter.name }}</div>
+                    <div class="rec-reason"><i class="bi bi-lightning-charge"></i> Fastest service - only {{ recommended_counter.waiting_count }} in queue</div>
+                    <div class="rec-location"><i class="bi bi-geo-alt"></i> {{ recommended_counter.location or 'Main Hall' }}</div>
+                </div>
+                <div class="rec-stats">
+                    <div class="rec-wait">{{ recommended_counter.average_wait_minutes }} min</div>
+                    <div class="rec-label">Est. Wait</div>
+                </div>
+                <form method="POST" action="{{ url_for('user.queue_join') }}">
+                    <input type="hidden" name="counter_id" value="{{ recommended_counter.id }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Join Queue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Available Food Counters -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h3 class="section-title"><i class="bi bi-shop"></i> Available Food Counters</h3>
+            <button onclick="location.reload()" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-arrow-repeat"></i> Refresh
+            </button>
+        </div>
+        <div class="section-body">
+            {% if counters %}
+            <div class="counter-grid">
+                {% for counter in counters %}
+                <div class="counter-item {% if in_queue and in_queue_counter and in_queue_counter.name == counter.name %}current{% endif %}">
+                    <div class="counter-header">
+                        <div>
+                            <div class="counter-name">{{ counter.name }}</div>
+                            <div class="counter-location">
+                                <i class="bi bi-geo-alt"></i> {{ counter.location or 'Main Hall' }}
+                            </div>
+                        </div>
+                        <span class="badge bg-success">Open</span>
+                    </div>
+                    <div class="counter-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ counter.waiting_count }}</div>
+                            <div class="stat-label">In Queue</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ counter.average_wait_minutes }} min</div>
+                            <div class="stat-label">Est. Wait</div>
+                        </div>
+                    </div>
+                    {% if counter.load_percent is defined %}
+                    <div class="load-bar">
+                        {% if counter.load_percent < 40 %}
+                        <div class="load-fill low" style="width: {{ counter.load_percent }}%"></div>
+                        {% elif counter.load_percent < 75 %}
+                        <div class="load-fill medium" style="width: {{ counter.load_percent }}%"></div>
+                        {% else %}
+                        <div class="load-fill high" style="width: {{ counter.load_percent }}%"></div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="counter-actions">
+                        {% if in_queue and in_queue_counter and in_queue_counter.name == counter.name %}
+                        <span class="btn btn-success btn-sm w-100" disabled>
+                            <i class="bi bi-check-circle"></i> Currently Here
+                        </span>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('user.queue_join') }}">
+                            <input type="hidden" name="counter_id" value="{{ counter.id }}">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-plus-circle"></i> Join Queue
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-shop-window"></i>
+                </div>
+                <div class="empty-title">No Counters Open</div>
+                <div class="empty-text">
+                    Food counters are currently closed. Check back soon or head to the help desk if you need assistance.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Updates -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h3 class="section-title"><i class="bi bi-megaphone"></i> Recent Updates</h3>
+            <a href="{{ url_for('user.notifications') }}" class="btn btn-sm btn-outline-primary">
+                View All
+            </a>
+        </div>
+        <div class="section-body">
+            {% if notifications %}
+            <div class="activity-list">
+                {% for notification in notifications[:5] %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">{{ notification.title }}</div>
+                        <div class="activity-time">{{ notification.created_at[:16] if notification.created_at else 'Just now' }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state small">
+                <div class="empty-icon">
+                    <i class="bi bi-megaphone"></i>
+                </div>
+                <div class="empty-title">No Updates Yet</div>
+                <div class="empty-text">Stay tuned for announcements.</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="dashboard-section quick-section">
+        <div class="section-body">
+            <div class="quick-actions">
+                <a href="{{ url_for('user.queue') }}" class="quick-action-btn">
+                    <i class="bi bi-list-ol"></i> Food Queue
+                </a>
+                <button onclick="location.reload()" class="quick-action-btn">
+                    <i class="bi bi-arrow-repeat"></i> Refresh
+                </button>
+                <a href="{{ url_for('user.notifications') }}" class="quick-action-btn">
+                    <i class="bi bi-bell"></i> Notifications
+                </a>
+                <a href="{{ url_for('user.crowd') }}" class="quick-action-btn">
+                    <i class="bi bi-people"></i> Crowd
+                </a>
+                <a href="{{ url_for('user.help') }}" class="quick-action-btn">
+                    <i class="bi bi-question-circle"></i> Help
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help/Support Section -->
+    <div class="dashboard-section help-section">
+        <div class="section-body">
+            <div class="help-content">
+                <div class="help-text">
+                    <i class="bi bi-life-preserver"></i>
+                    <span>Facing an issue?</span>
+                </div>
+                <a href="{{ url_for('user.help') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-chat-left-text"></i> Request Help
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

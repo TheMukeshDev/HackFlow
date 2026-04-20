@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Analytics - HackFlow Admin{% endblock %}
+{% block content %}
+<div class="admin-layout">
+    <h2><i class="bi bi-graph-up"></i> System Analytics</h2>
+    
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-icon primary"><i class="bi bi-people"></i></div>
+            <div class="stat-info"><div class="stat-value">{{ total_users }}</div><div class="stat-label">Total Users</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon success"><i class="bi bi-heart"></i></div>
+            <div class="stat-info"><div class="stat-value">{{ total_volunteers }}</div><div class="stat-label">Volunteers</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon info"><i class="bi bi-shop"></i></div>
+            <div class="stat-info"><div class="stat-value">{{ active_counters }}/{{ total_counters }}</div><div class="stat-label">Active Counters</div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning"><i class="bi bi-list-ol"></i></div>
+            <div class="stat-info"><div class="stat-value">{{ waiting_in_queue }}</div><div class="stat-label">In Queue</div></div>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h3>Queue Statistics</h3>
+        <div class="row">
+            <div class="col-md-4"><div class="card"><div class="card-body text-center">
+                <h4>{{ total_queue_entries }}</h4><p class="mb-0">Total Queue Entries</p>
+            </div></div></div>
+            <div class="col-md-4"><div class="card"><div class="card-body text-center">
+                <h4>{{ waiting_in_queue }}</h4><p class="mb-0">Currently Waiting</p>
+            </div></div></div>
+            <div class="col-md-4"><div class="card"><div class="card-body text-center">
+                <h4>{{ served }}</h4><p class="mb-0">Served</p>
+            </div></div></div>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h3>Help Requests</h3>
+        <div class="row">
+            <div class="col-md-4"><div class="card"><div class="card-body text-center">
+                <h4>{{ total_help }}</h4><p class="mb-0">Total Requests</p>
+            </div></div></div>
+            <div class="col-md-4"><div class="card"><div class="card-body text-center">
+                <h4>{{ pending_help }}</h4><p class="mb-0">Pending</p>
+            </div></div></div>
+            <div class="col-md-4"><div class="card"><div class="card-body text-center">
+                <h4>{{ resolved_help }}</h4><p class="mb-0">Resolved</p>
+            </div></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

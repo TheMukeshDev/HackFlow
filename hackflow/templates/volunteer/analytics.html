@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-graph-up"></i> Analytics</h2>
+    
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Total Users</h6>
+                    <h3>{{ analytics.total_users }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Volunteers</h6>
+                    <h3>{{ analytics.total_volunteers }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Queue Entries</h6>
+                    <h3>{{ analytics.total_queue_entries }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Help Requests</h6>
+                    <h3>{{ analytics.total_help_requests }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Broadcasts - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-broadcast"></i> Broadcasts</h2>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h5>Send Announcement</h5></div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="announcement">Announcement</option>
+                                <option value="system">System</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Send Broadcast</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <h5>Recent Broadcasts</h5>
+        {% if notifications %}
+        <div class="list-group">
+            {% for n in notifications %}
+            <div class="list-group-item">
+                <h6>{{ n.title }}</h6>
+                <p class="mb-1">{{ n.message }}</p>
+                <small class="text-muted">{{ n.created_at[:16] }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No broadcasts yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

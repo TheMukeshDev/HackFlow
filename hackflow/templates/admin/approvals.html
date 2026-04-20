@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Volunteer Approvals - HackFlow Admin{% endblock %}
+{% block content %}
+<div class="admin-layout">
+    <h2><i class="bi bi-person-check"></i> Volunteer Approvals</h2>
+    
+    {% if pending_volunteers %}
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>College</th>
+                    <th>Applied Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in pending_volunteers %}
+                <tr>
+                    <td class="fw-semibold">{{ u.full_name or u.username }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.phone or 'N/A' }}</td>
+                    <td>{{ u.college or 'N/A' }}</td>
+                    <td>{{ u.created_at[:10] if u.created_at else 'N/A' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.volunteer_approval_action') }}" class="d-inline">
+                            <input type="hidden" name="user_id" value="{{ u.id }}">
+                            <button type="submit" name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.volunteer_approval_action') }}" class="d-inline">
+                            <input type="hidden" name="user_id" value="{{ u.id }}">
+                            <button type="submit" name="action" value="reject" class="btn btn-outline-danger btn-sm">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No pending volunteer approvals
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

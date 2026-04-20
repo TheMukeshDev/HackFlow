@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Crowd Status - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-people"></i> Crowd Status</h2>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h5>Zones</h5></div>
+                <div class="card-body">
+                    {% if zones %}
+                    <ul class="list-group">
+                        {% for zone in zones %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            {{ zone.name }}
+                            <span class="badge bg-{{ 'success' if zone.current_count < zone.capacity // 2 else 'warning' if zone.current_count < zone.capacity else 'danger' }}">
+                                {{ zone.current_count }}/{{ zone.capacity }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No zones tracked.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h5>Food Counters</h5></div>
+                <div class="card-body">
+                    {% if counters %}
+                    <ul class="list-group">
+                        {% for counter in counters %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            {{ counter.name }}
+                            <span class="badge bg-{{ 'success' if counter.is_open else 'secondary' }}">
+                                {{ 'Open' if counter.is_open else 'Closed' }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No counters available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

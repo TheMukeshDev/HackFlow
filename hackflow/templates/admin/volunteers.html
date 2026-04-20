@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Volunteers - HackFlow Admin{% endblock %}
+{% block content %}
+<div class="admin-layout">
+    <h2><i class="bi bi-heart"></i> Volunteers</h2>
+    
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter != 'pending' %}active{% endif %}" href="{{ url_for('admin.volunteers') }}">Approved</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" href="{{ url_for('admin.volunteers', status='pending') }}">Pending Approval</a>
+        </li>
+    </ul>
+
+    {% if volunteers %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>College</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in volunteers %}
+                <tr>
+                    <td>{{ v.full_name or v.username }}</td>
+                    <td>{{ v.email }}</td>
+                    <td>{{ v.phone or 'N/A' }}</td>
+                    <td>{{ v.college or 'N/A' }}</td>
+                    <td>
+                        {% if v.role == 'pending_volunteer' %}
+                        <span class="badge bg-warning">Pending</span>
+                        {% else %}
+                        <span class="badge bg-success">Approved</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ v.created_at[:10] if v.created_at else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No volunteers found</p>
+    {% endif %}
+</div>
+{% endblock %}

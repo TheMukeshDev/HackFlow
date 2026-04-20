@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Help Requests - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-question-circle"></i> Help Requests</h2>
+    
+    <div class="mb-3">
+        <a href="{{ url_for('volunteer.requests', status='pending') }}" class="btn btn-sm btn-{{ 'primary' if status_filter == 'pending' else 'outline-primary' }}">Pending</a>
+        <a href="{{ url_for('volunteer.requests', status='in_progress') }}" class="btn btn-sm btn-{{ 'primary' if status_filter == 'in_progress' else 'outline-primary' }}">In Progress</a>
+        <a href="{{ url_for('volunteer.requests', status='resolved') }}" class="btn btn-sm btn-{{ 'primary' if status_filter == 'resolved' else 'outline-primary' }}">Resolved</a>
+        <a href="{{ url_for('volunteer.requests', status='all') }}" class="btn btn-sm btn-{{ 'primary' if status_filter == 'all' else 'outline-primary' }}">All</a>
+    </div>
+    
+    {% if requests %}
+    <div class="list-group">
+        {% for req in requests %}
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ req.title }}</h5>
+                <span class="badge bg-{{ 'warning' if req.status == 'pending' else 'info' if req.status == 'in_progress' else 'success' }}">
+                    {{ req.status }}
+                </span>
+            </div>
+            <p class="mb-1">{{ req.description }}</p>
+            <small class="text-muted">{{ req.user_id }} - {{ req.urgency }} - {{ req.created_at[:16] }}</small>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No requests.</p>
+    {% endif %}
+</div>
+{% endblock %}

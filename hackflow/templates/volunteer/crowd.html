@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Crowd Monitoring - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-people"></i> Crowd Monitoring</h2>
+    
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Total Waiting</h6>
+                    <h3>{{ stats.total_waiting }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Zones</h6>
+                    <h3>{{ stats.zones }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h6>Counters</h6>
+                    <h3>{{ stats.counters }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h5>Crowd Zones</h5></div>
+                <div class="card-body">
+                    {% if zones %}
+                    <table class="table">
+                        <thead><tr><th>Zone</th><th>Count</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for zone in zones %}
+                            <tr>
+                                <td>{{ zone.name }}</td>
+                                <td>{{ zone.current_count }}/{{ zone.capacity }}</td>
+                                <td>
+                                    {% if zone.current_count < zone.capacity // 2 %}
+                                    <span class="badge bg-success">Low</span>
+                                    {% elif zone.current_count < zone.capacity %}
+                                    <span class="badge bg-warning">Moderate</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Full</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">No zones tracked.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><h5>Counters</h5></div>
+                <div class="card-body">
+                    {% if counters %}
+                    <table class="table">
+                        <thead><tr><th>Counter</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for counter in counters %}
+                            <tr>
+                                <td>{{ counter.name }}</td>
+                                <td>
+                                    {% if counter.is_open %}
+                                    <span class="badge bg-success">Open</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">No counters.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

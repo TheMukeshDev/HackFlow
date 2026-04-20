@@ -1,0 +1,5 @@
+"""Admin Blueprint."""
+
+from hackflow.blueprints.admin.routes import admin_bp
+
+__all__ = ["admin_bp"]

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Task Assignment - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-list-task"></i> Task Assignment</h2>
+    
+    <div class="card">
+        <div class="card-header"><h5>Pending Tasks</h5></div>
+        <div class="card-body">
+            {% if tasks %}
+            <div class="list-group">
+                {% for task in tasks %}
+                <div class="list-group-item">
+                    <h6>{{ task.title }}</h6>
+                    <small class="text-muted">{{ task.description }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">No pending tasks.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+# HackFlow Dependencies
+
+# Flask
+Flask>=2.3.0,<3.1.0
+
+# Flask Extensions
+Flask-Bcrypt>=1.0.1
+Flask-Limiter>=3.0.0
+Flask-WTF>=1.1.0
+
+# Database
+supabase>=2.0.0
+
+# Validation
+marshmallow>=3.20.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Production
+gunicorn>=21.0.0

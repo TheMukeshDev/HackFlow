@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}Volunteer Dashboard - HackFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --bg-deep: #0a0e17;
+    --bg-dark: #0d1117;
+    --bg-surface: #161b22;
+    --bg-elevated: #1c2128;
+    --bg-hover: #21262d;
+    --border: #30363d;
+    --primary: #58a6ff;
+    --primary-hover: #79b8ff;
+    --accent: #7ee787;
+    --warning: #d29922;
+    --danger: #f85149;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --radius-lg: 12px;
+    --shadow: 0 3px 6px rgba(0,0,0,0.4);
+    --shadow-glow: 0 0 40px rgba(88, 166, 255, 0.15);
+}
+
+body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+}
+
+.volunteer-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: -1;
+    background: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(88, 166, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(126, 231, 135, 0.05) 0%, transparent 40%),
+        var(--bg-deep);
+}
+
+.volunteer-bg-grid {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image: linear-gradient(rgba(48, 54, 61, 0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(48, 54, 61, 0.4) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+}
+
+/* Header */
+.volunteer-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.volunteer-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.volunteer-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Cards */
+.volunteer-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.volunteer-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-glow);
+}
+
+.volunteer-card .card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.volunteer-card .card-icon.primary {
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--primary);
+}
+
+.volunteer-card .card-icon.success {
+    background: rgba(126, 231, 135, 0.15);
+    color: var(--accent);
+}
+
+.volunteer-card .card-icon.warning {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+}
+
+.volunteer-card .card-icon.info {
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--primary);
+}
+
+.volunteer-card .card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.volunteer-card .card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.125rem;
+}
+
+.volunteer-card .card-subtext {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Quick Actions */
+.volunteer-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.volunteer-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.volunteer-action-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Section */
+.volunteer-section {
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.volunteer-section .section-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.volunteer-section .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.volunteer-section .section-body {
+    padding: 1.25rem;
+}
+
+/* Activity */
+.volunteer-activity {
+    display: flex;
+    flex-direction: column;
+}
+
+.volunteer-activity-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.volunteer-activity-item:last-child {
+    border-bottom: none;
+}
+
+.volunteer-activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.volunteer-activity-icon.waiting {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+}
+
+.volunteer-activity-icon.called, .volunteer-activity-icon.served {
+    background: rgba(126, 231, 135, 0.15);
+    color: var(--accent);
+}
+
+.volunteer-activity-icon.pending {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+}
+
+.volunteer-activity-icon.resolved {
+    background: rgba(126, 231, 135, 0.15);
+    color: var(--accent);
+}
+
+.volunteer-activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.volunteer-activity-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.125rem;
+    font-size: 0.9rem;
+}
+
+.volunteer-activity-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.volunteer-activity-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Empty State */
+.volunteer-empty {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.volunteer-empty .empty-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+}
+
+.volunteer-empty .empty-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.volunteer-empty .empty-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+/* Badge */
+.badge-waiting {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background: rgba(126, 231, 135, 0.15);
+    color: var(--accent);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-primary {
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="volunteer-bg"></div>
+<div class="volunteer-bg-grid"></div>
+
+<div class="container py-4" style="position: relative; z-index: 1;">
+    <!-- Header -->
+    <div class="volunteer-header">
+        <h1>Volunteer Dashboard</h1>
+        <p class="subtitle">Manage food counters, help requests, and crowd operations in real time.</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="volunteer-card">
+                <div class="card-icon primary">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="card-label">Waiting in Queue</div>
+                <div class="card-value">{{ stats.waiting }}</div>
+                <div class="card-subtext">participants waiting</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="volunteer-card">
+                <div class="card-icon success">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div class="card-label">Called</div>
+                <div class="card-value">{{ stats.called }}</div>
+                <div class="card-subtext">tokens called</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="volunteer-card">
+                <div class="card-icon warning">
+                    <i class="bi bi-exclamation-circle"></i>
+                </div>
+                <div class="card-label">Pending Requests</div>
+                <div class="card-value">{{ stats.pending_requests }}</div>
+                <div class="card-subtext">help requests</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="volunteer-card">
+                <div class="card-icon info">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <div class="card-label">Active Counters</div>
+                <div class="card-value">{{ stats.active_counters }}</div>
+                <div class="card-subtext">counters open</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="volunteer-actions">
+        <a href="{{ url_for('volunteer.food') }}" class="volunteer-action-btn">
+            <i class="bi bi-shop"></i> Food Counters
+        </a>
+        <a href="{{ url_for('volunteer.requests') }}" class="volunteer-action-btn">
+            <i class="bi bi-chat-left-text"></i> Help Requests
+        </a>
+        <a href="{{ url_for('volunteer.crowd') }}" class="volunteer-action-btn">
+            <i class="bi bi-people"></i> Crowd Status
+        </a>
+        <a href="{{ url_for('volunteer.broadcasts') }}" class="volunteer-action-btn">
+            <i class="bi bi-megaphone"></i> Broadcasts
+        </a>
+        <button onclick="location.reload()" class="volunteer-action-btn">
+            <i class="bi bi-arrow-repeat"></i> Refresh
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent Queue Activity -->
+        <div class="col-lg-6">
+            <div class="volunteer-section">
+                <div class="section-header">
+                    <h3 class="section-title"><i class="bi bi-list-ol"></i> Recent Queue Activity</h3>
+                </div>
+                <div class="section-body">
+                    {% if recent_queue %}
+                    <div class="volunteer-activity">
+                        {% for item in recent_queue[:5] %}
+                        <div class="volunteer-activity-item">
+                            <div class="volunteer-activity-icon {{ 'served' if item.status == 'served' else 'waiting' }}">
+                                <i class="bi bi-{{ 'check' if item.status == 'served' else 'clock' }}"></i>
+                            </div>
+                            <div class="volunteer-activity-content">
+                                <div class="volunteer-activity-title">
+                                    Position #{{ item.position }} - {{ item.status|title }}
+                                </div>
+                                <div class="volunteer-activity-meta">
+                                    <span class="badge-{{ 'success' if item.status == 'served' else 'waiting' }}">{{ item.status }}</span>
+                                    <span class="volunteer-activity-time">{{ item.joined_at[:16] if item.joined_at else 'Just now' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="volunteer-empty">
+                        <div class="empty-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <div class="empty-title">No queue activity</div>
+                        <div class="empty-text">Queue will show here when users join.</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Help Requests -->
+        <div class="col-lg-6">
+            <div class="volunteer-section">
+                <div class="section-header">
+                    <h3 class="section-title"><i class="bi bi-question-circle"></i> Recent Help Requests</h3>
+                </div>
+                <div class="section-body">
+                    {% if recent_requests %}
+                    <div class="volunteer-activity">
+                        {% for item in recent_requests[:5] %}
+                        <div class="volunteer-activity-item">
+                            <div class="volunteer-activity-icon {{ 'resolved' if item.status == 'resolved' else 'pending' }}">
+                                <i class="bi bi-{{ 'check' if item.status == 'resolved' else 'hourglass' }}"></i>
+                            </div>
+                            <div class="volunteer-activity-content">
+                                <div class="volunteer-activity-title">
+                                    {{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}
+                                </div>
+                                <div class="volunteer-activity-meta">
+                                    <span class="badge-{{ 'success' if item.status == 'resolved' else 'waiting' }}">{{ item.status }}</span>
+                                    <span class="volunteer-activity-time">{{ item.created_at[:16] if item.created_at else 'Just now' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="volunteer-empty">
+                        <div class="empty-icon">
+                            <i class="bi bi-chat-left-text"></i>
+                        </div>
+                        <div class="empty-title">No help requests</div>
+                        <div class="empty-text">Help requests will appear here.</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Help Request - HackFlow{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-question-circle"></i> Request Help</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Details</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required minlength="20"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="urgency" class="form-label">Urgency</label>
+                            <select class="form-select" id="urgency" name="urgency">
+                                <option value="low">Low - Can wait</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="high">High - Urgent</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

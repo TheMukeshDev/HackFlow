@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - HackFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-layout { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <!-- Header -->
+    <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p>System operations control center</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-icon primary"><i class="bi bi-people"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon success"><i class="bi bi-heart"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_volunteers }}</div>
+                <div class="stat-label">Volunteers</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning"><i class="bi bi-hourglass"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ pending_approvals }}</div>
+                <div class="stat-label">Pending Approvals</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon info"><i class="bi bi-shop"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ active_counters|length }}/{{ all_counters|length }}</div>
+                <div class="stat-label">Active Counters</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-list-ol"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ active_queues }}</div>
+                <div class="stat-label">In Queue</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon danger"><i class="bi bi-exclamation-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ unresolved_help }}</div>
+                <div class="stat-label">Open Help</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="admin-section">
+        <h3><i class="bi bi-lightning"></i> Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('admin.volunteer_approvals') }}" class="action-btn">
+                <i class="bi bi-person-check"></i> Volunteer Approvals
+                {% if pending_approvals > 0 %}<span class="badge bg-danger">{{ pending_approvals }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('admin.counters') }}" class="action-btn">
+                <i class="bi bi-shop"></i> Manage Counters
+            </a>
+            <a href="{{ url_for('admin.broadcast') }}" class="action-btn">
+                <i class="bi bi-megaphone"></i> Send Announcement
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="action-btn">
+                <i class="bi bi-people"></i> Manage Users
+            </a>
+            <a href="{{ url_for('admin.analytics') }}" class="action-btn">
+                <i class="bi bi-graph-up"></i> Analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="row g-4">
+        <!-- Active Counters -->
+        <div class="col-lg-6">
+            <div class="admin-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="bi bi-shop"></i> Food Counters</h3>
+                    <a href="{{ url_for('admin.counters') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                </div>
+                {% if all_counters %}
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for counter in all_counters[:5] %}
+                            <tr>
+                                <td>{{ counter.name }}</td>
+                                <td>{{ counter.location or 'N/A' }}</td>
+                                <td>
+                                    {% if counter.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mt-3">No counters configured</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Announcements -->
+        <div class="col-lg-6">
+            <div class="admin-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="bi bi-megaphone"></i> Recent Announcements</h3>
+                    <a href="{{ url_for('admin.broadcast') }}" class="btn btn-sm btn-outline-primary">New</a>
+                </div>
+                {% if recent_announcements %}
+                <div class="mt-3">
+                    {% for ann in recent_announcements %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <div class="fw-semibold">{{ ann.title }}</div>
+                        <small class="text-muted">{{ ann.message[:100] }}{% if ann.message|length > 100 %}...{% endif %}</small>
+                        <div class="text-muted mt-1"><small>{{ ann.created_at[:16] if ann.created_at else 'N/A' }}</small></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mt-3">No announcements</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="admin-section">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="bi bi-clock-history"></i> Recent User Activity</h3>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        {% if recent_users %}
+        <div class="table-responsive mt-3">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in recent_users %}
+                    <tr>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.email }}</td>
+                        <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+                        <td>{{ u.created_at[:10] if u.created_at else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mt-3">No recent users</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

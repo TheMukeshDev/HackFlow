@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Manage Users - HackFlow Admin{% endblock %}
+{% block content %}
+<div class="admin-layout">
+    <h2>Manage Users</h2>
+    <form method="GET" class="mb-3">
+        <input type="text" name="search" placeholder="Search users..." value="{{ request.args.get('search', '') }}" class="form-control" style="max-width: 300px; display: inline-block;">
+        <select name="role" class="form-select" style="max-width: 150px; display: inline-block;">
+            <option value="">All Roles</option>
+            <option value="participant" {% if role_filter=='participant' %}selected{% endif %}>Participant</option>
+            <option value="volunteer" {% if role_filter=='volunteer' %}selected{% endif %}>Volunteer</option>
+            <option value="admin" {% if role_filter=='admin' %}selected{% endif %}>Admin</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    <table class="table table-striped">
+        <thead>
+            <tr><th>Username</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.username }}</td>
+                <td>{{ u.email }}</td>
+                <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+                <td>{{ u.created_at[:10] if u.created_at else 'N/A' }}</td>
+                <td>
+                    {% if u.role != 'admin' %}
+                    <form method="POST" action="{{ url_for('admin.promote_user') }}" style="display: inline;">
+                        <input type="hidden" name="user_id" value="{{ u.id }}">
+                        {% if u.role == 'participant' %}
+                        <button type="submit" name="role" value="volunteer" class="btn btn-sm btn-outline-success">Promote</button>
+                        {% else %}
+                        <button type="submit" name="role" value="participant" class="btn btn-sm btn-outline-warning">Demote</button>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
